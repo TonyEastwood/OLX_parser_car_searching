@@ -3,6 +3,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+.idea/
+Scripts/
+*.db
+db/
+pyvenv.cfg
+
 # C extensions
 *.so
 
