@@ -37,15 +37,41 @@ class Cars_Database():
 
         self.database.commit()
 
+    def RemoveLinks(self, table_name, links_list):
+        for i in range(len(links_list)):
+            links_list[i] = 'link = \'' + links_list[i] + '\''
+        sql_request = ' OR '.join(links_list)
+        print(sql_request)
+
+        self.cursor.execute(""
+                        "DELETE from "+table_name+" where " +sql_request +
+                        "")
+        self.database.commit()
+
     def ShowDataInTable(self, table_name):
         res = self.cursor.execute("SELECT brand FROM "+table_name)
         m = res.fetchall()
 
+    def SelectListOfDatasByColumn(self, table_name, column_name):
+        self.cursor.execute("SELECT "+column_name+" FROM "+table_name + " ORDER BY data_creation ASC")
+        rows = self.cursor.fetchall()
+        return rows
+
     def Close(self):
         self.database.close()
 
-#test_database = Cars_Database("cars_ad.db", "cars_table")
 
+#test_database = Cars_Database(CC.DB_NAME, CC.DB_TABLE_NAME)
+#test_database.SelectListOfDatasByColumn(CC.DB_TABLE_NAME,"link")
+# link_list = []
+#
+# link1 = "https://www.olx.ua/d/uk/obyavlenie/bmw-x5-hybrid-plug-in-2016-IDSaUTp.html"
+# link2 = "https://www.olx.ua/d/uk/obyavlenie/seat-altea-xl-tsi-IDOs4RU.html"
+# link3 = "https://www.olx.ua/d/uk/obyavlenie/2015-jeep-cherokee-trailhawk-IDSaUOR.html"
+# link4= "https://www.olx.ua/d/uk/obyavlenie/srochno-vaz-2114-srochno-IDS9c9I.html"
+# link_list.append(link1)
+# link_list.append(link2)
+# test_database.RemoveLinks(CC.DB_TABLE_NAME, link_list)
 #test_list = []
 #test_list.append(CC.CSV_HEADER_DATABASETE)
 #test_list.append(CC.CSV_HEADER_DATABASETE)

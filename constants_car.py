@@ -11,9 +11,6 @@ DB_TABLE_NAME = "cars_table"
 CSV_HEADER_DATABASE = ["data_creation INTEGER","link TEXT UNIQUE","price INTEGER","brand TEXT","model TEXT","year_release INTEGER","engine_capacity FLOAT","fuel_type TEXT","mileage INTEGER","color TEXT","transmission TEXT","drive_type TEXT",
               "body TEXT","from_country TEXT","quantity_places INTEGER","quantity_doors INTEGER","rozmutnena TEXT","tech_state TEXT","region TEXT","city TEXT"]
 
-CSV_HEADER_DATABASETE = ["data_creation","link","price","brand",10,"year_release","engine_capacity","fuel_type","mileage","color","transmission","drive_type",
-              "body","from_country","quantity_places","quantity_doors","rozmutnena","tech_state","region"]
-
 TAG_MODEl = "Модель: "  # модель
 TAG_RELEASE_YEAR = "Рік випуску: "  # год выпуска
 TAG_ENGINE_CAPACITY = "Обєм двигуна: "  # обьем двигателя

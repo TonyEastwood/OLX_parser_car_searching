@@ -15,6 +15,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import csv
 import os.path
+import threading
 
 
 # cars_list = []
@@ -90,7 +91,15 @@ URL = "https://www.olx.ua/d/transport/legkovye-avtomobili/pavlograd/?currency=US
 #URL = "https://www.olx.ua/d/uk/obyavlenie/prodam-volvo-v50-2-0-IDRhsbP.html"
 #https://www.olx.ua/d/uk/obyavlenie/prodam-ford-fiesta-2007-rk-mozhliva-rozstrochka-kredit-IDS2mdv.html
 cars_list = []
+invalid_links = []
+all_links_from_database = []
 cars_database = SQ.Cars_Database(CC.DB_NAME, CC.DB_TABLE_NAME)
+
+
+def UpdateLinksFromDatabase():
+    global all_links_from_database
+    all_links_from_database.clear()
+    all_links_from_database = cars_database.SelectListOfDatasByColumn(CC.DB_TABLE_NAME,"link")
 
 def WriteCarsToCSVFile():
     global cars_list
@@ -403,104 +412,118 @@ class Car_Structure():
 
 def CarSearching(searching_browser, searching_URL):
     global cars_list
-    searching_browser.get(searching_URL)
-    page = searching_browser.page_source
-    soup = BeautifulSoup(page, "html.parser")
 
-    quantity_page = 0
-    current_ad = 0
-    while quantity_page <50:
-        quantity_page = quantity_page + 1
-        print("Page:" + str(quantity_page))
-        try:
-            button_lire_plus = WebDriverWait(searching_browser, 10).until(
-                    EC.presence_of_all_elements_located((By.CLASS_NAME, 'css-rc5s2u')))
-        except NoSuchElementException:
-            print("46No such element")
-            continue
-        except TimeoutException:
-            print("43 Too long to open page")
-            continue
-        except:
-            print("4e7 Unknown error")
-            continue
+    while True:
+        UpdateLinksFromDatabase()
 
-        for i in range(len(button_lire_plus)):
+        searching_browser.get(searching_URL)
+        page = searching_browser.page_source
+        soup = BeautifulSoup(page, "html.parser")
+
+        quantity_page = 0
+        current_ad = 0
+        while quantity_page <50:
+            quantity_page = quantity_page + 1
+            print("Page:" + str(quantity_page))
             try:
                 button_lire_plus = WebDriverWait(searching_browser, 10).until(
-                    EC.presence_of_all_elements_located((By.CLASS_NAME, 'css-rc5s2u')))
-                link = button_lire_plus[i].get_attribute('href')
-                #print(link)
+                        EC.presence_of_all_elements_located((By.CLASS_NAME, 'css-rc5s2u')))
+            except NoSuchElementException:
+                print("46No such element")
+                continue
+            except TimeoutException:
+                print("43 Too long to open page")
+                continue
+            except:
+                print("4e7 Unknown error")
+                continue
 
-                if "https://www.olx" not in link:
-                    print("Hyevi link")
+            for i in range(len(button_lire_plus)):
+                try:
+                    button_lire_plus = WebDriverWait(searching_browser, 10).until(
+                        EC.presence_of_all_elements_located((By.CLASS_NAME, 'css-rc5s2u')))
+                    link = button_lire_plus[i].get_attribute('href')
+                    #print(link)
+
+                    if "https://www.olx" not in link:
+                        print("Hyevi link")
+                        continue
+
+                    searching_browser.get(link)
+                    #searching_browser.execute_script("arguments[0].click()", button_lire_plus[i])
+
+                    WebDriverWait(searching_browser, 30).until(
+                        EC.presence_of_element_located((By.CLASS_NAME, 'css-dcwlyx')))
+                except NoSuchElementException:
+                    print("2 No such element")
+                    continue
+                except TimeoutException:
+                    print("3 Too long to open page")
+                    searching_browser.back()
+                    time.sleep(3)
+                    continue
+                except:
+                    print("4 Unknown error")
                     continue
 
-                searching_browser.get(link)
-                #searching_browser.execute_script("arguments[0].click()", button_lire_plus[i])
-
-                WebDriverWait(searching_browser, 30).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, 'css-dcwlyx')))
-            except NoSuchElementException:
-                print("2 No such element")
-                continue
-            except TimeoutException:
-                print("3 Too long to open page")
-                searching_browser.back()
-                time.sleep(3)
-                continue
-            except:
-                print("4 Unknown error")
-                continue
-
-            page = searching_browser.page_source
-            soup = BeautifulSoup(page, "html.parser")
-            currentCar = Car_Structure()
+                page = searching_browser.page_source
+                soup = BeautifulSoup(page, "html.parser")
+                currentCar = Car_Structure()
 
 
-            current_ad = current_ad + 1
-            print(current_ad)
+                current_ad = current_ad + 1
+                print(current_ad)
 
-            currentCar.FillInfoByBeautifulSoup(soup, link)
-            #currentCar.ShowFullInfo()
-            cars_list.append(currentCar.ConvertToDatabaseRaw())
+                currentCar.FillInfoByBeautifulSoup(soup, link)
+                #currentCar.ShowFullInfo()
+                cars_list.append(currentCar.ConvertToDatabaseRaw())
 
-            #cars_list.sort(key=lambda x: x.creation_date, reverse=True)
+                #cars_list.sort(key=lambda x: x.creation_date, reverse=True)
 
-            if current_ad%10 ==0:
-                cars_database.Insert(CC.DB_TABLE_NAME, cars_list)
-                #WriteCarsToCSVFile()
-                cars_list.clear()
+                if current_ad%10 ==0:
+                    cars_database.Insert(CC.DB_TABLE_NAME, cars_list)
+
+                    if invalid_links:
+                        print("LINKS REMOVED: ")
+                        print(invalid_links)
+                        cars_database.RemoveLinks(CC.DB_TABLE_NAME, invalid_links)
+                        invalid_links.clear()
+                    #WriteCarsToCSVFile()
+                    cars_list.clear()
+
+                if current_ad % 1000 == 0:
+                    UpdateLinksFromDatabase()
+
+                try:
+                    searching_browser.back()
+                    #time.sleep(1)
+                except NoSuchElementException:
+                    print("No such element")
+                    continue
+                except TimeoutException:
+                    print("frfvfd Too long to open page")
+                    searching_browser.back()
+                    #time.sleep(3)
+                    continue
+                except:
+                    print("dfvd Unknown error")
+                    continue
 
             try:
-                searching_browser.back()
-                #time.sleep(1)
+                button_next = WebDriverWait(searching_browser, 30).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="pagination-forward"]')))
+                searching_browser.execute_script('arguments[0].click()', button_next)
+                #time.sleep(3)
             except NoSuchElementException:
                 print("No such element")
-                continue
             except TimeoutException:
-                print("frfvfd Too long to open page")
+                print("Too long to open page")
                 searching_browser.back()
                 #time.sleep(3)
-                continue
+
             except:
-                print("dfvd Unknown error")
-                continue
-
-        try:
-            button_next = WebDriverWait(searching_browser, 30).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="pagination-forward"]')))
-            searching_browser.execute_script('arguments[0].click()', button_next)
-            #time.sleep(3)
-        except NoSuchElementException:
-            print("No such element")
-        except TimeoutException:
-            print("Too long to open page")
-            searching_browser.back()
-            #time.sleep(3)
-
-        except:
-            print("Unknown error")
+                print("Unknown error")
+        time.sleep(3)
 
 
 def TestingCertainCar(searching_browser, searching_URL):
@@ -529,9 +552,51 @@ def BrowserInitializing():
     option.add_argument("--disable-infobars")
     return webdriver.Chrome(options=option)
 
+def SearchingForInvalidLinksInDatabse(searching_browser):
+    global all_links_from_database
+    while True:
+        print("new iteration")
+        links_list = all_links_from_database
+        for link in links_list:
+            try:
+                searching_browser.get(link[0])
+                WebDriverWait(searching_browser, 10).until(
+                EC.presence_of_element_located((By.CLASS_NAME, 'css-dcwlyx')))
+            except NoSuchElementException:
+                print("2 No such element")
+                continue
+            except TimeoutException:
+                print("3 Too long to open page")
+                invalid_links.append(link[0])
+                print("FIND NEW INVALID LINK "+ link[0])
+                print(invalid_links)
+                searching_browser.back()
+                continue
+            except:
+                print("4 Unknown error")
+                continue
+
+
+
 
 browser = BrowserInitializing()
+browserForInvalidLinks = BrowserInitializing()
+
+t1 = threading.Thread(target=SearchingForInvalidLinksInDatabse, args=(browserForInvalidLinks,))
+t1.start()
+
 CarSearching(browser, URL)
+
+
+# wait until thread 1 is completely executed
+t1.join()
+
+
+# both threads completely executed
+print("Done!")
+
+#CarSearching(browser, URL)
+#SearchingForInvalidLinksInDatabse(browserForInvalidLinks)
 #TestingCertainCar(browser, URL)
 
 
