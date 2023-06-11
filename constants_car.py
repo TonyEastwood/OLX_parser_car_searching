@@ -163,7 +163,6 @@ TAG_BRAND = [{"bmw":{"bmw","беха","бээмвэшка","бэха","буме�
             {"peugeot":{"peugeot","пежо","пижо","піжо"}},
             {"fiat":{"fiat","фиат","фіат"}},
             {"toyota":{"toyota","тайота","сorolla","корола","королла"}},
-            {"infinity":{"infinity","инфинити","інфініті","lnfiniti"}},
             {"jeep":{"jeep"}},
             {"chery":{"chery","cheri","чері","чери"}},
             {"gazel":{"gazel","газель"}},
@@ -197,6 +196,13 @@ TAG_BRAND = [{"bmw":{"bmw","беха","бээмвэшка","бэха","буме�
             {"lincoln":{"lincoln"}},
             {"saab":{"saab"}},
             {"jaguar":{"jaguar"}},
-            {"acura":{"acura"}}
+            {"acura":{"acura"}},
+            {"haval":{"haval"}},
+            {"hummer":{"hummer"}},
+            {"pontiac":{"pontiac"}},
+            {"brilliance":{"brilliance"}},
+            {"dadi":{"dadi"}},
+            {"infiniti":{"infiniti"}},
+            {"gmc":{"gmc"}}
 
              ]                #маркамашины

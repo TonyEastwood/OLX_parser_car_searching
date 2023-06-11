@@ -16,6 +16,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import csv
 import os.path
 import threading
+import inspect
 
 
 # cars_list = []
@@ -86,7 +87,7 @@ import threading
 
 
 #URL = "https://www.olx.ua/d/transport/legkovye-avtomobili/"
-URL = "https://www.olx.ua/d/transport/legkovye-avtomobili/pavlograd/?currency=USD"
+URL = "https://www.olx.ua/d/uk/transport/legkovye-avtomobili/dnp/?currency=USD&search%5Bfilter_enum_car_body%5D%5B0%5D=coupe&search%5Bfilter_enum_transmission_type%5D%5B0%5D=545"
 #URL = "https://www.olx.ua/d/uk/obyavlenie/great-wall-voleex-c30-IDO5vuR.html"
 #URL = "https://www.olx.ua/d/uk/obyavlenie/prodam-volvo-v50-2-0-IDRhsbP.html"
 #https://www.olx.ua/d/uk/obyavlenie/prodam-ford-fiesta-2007-rk-mozhliva-rozstrochka-kredit-IDS2mdv.html
@@ -94,6 +95,11 @@ cars_list = []
 invalid_links = []
 all_links_from_database = []
 cars_database = SQ.Cars_Database(CC.DB_NAME, CC.DB_TABLE_NAME)
+
+
+def GetCurrentLine():
+    """Returns the current line number in our program."""
+    return "["+str(inspect.currentframe().f_back.f_lineno)+"] "
 
 
 def UpdateLinksFromDatabase():
@@ -256,7 +262,7 @@ class Car_Structure():
                 split_date = creation_date.split()
                 creation_date = int(split_date[2] + GetMonthNumFromString(split_date[1]) + split_date[0])
         else:
-            print("Createion date can't be None!")
+            print(GetCurrentLine() + "Createion date can't be None!")
             return 0
         return creation_date
 
@@ -363,7 +369,7 @@ class Car_Structure():
                         self.brand = self.GetBrandFromString(self.model)
 
                 if self.brand is None:
-                    print("CAN't FIND ANY BRAND!!!!")
+                    print(GetCurrentLine() + "can't find a brand")
 
         if self.brand is not None and len(headers)>5:
             self.ad_city = self.GetCityFromString(headers[5].text.lower(), self.brand)
@@ -422,20 +428,20 @@ def CarSearching(searching_browser, searching_URL):
 
         quantity_page = 0
         current_ad = 0
-        while quantity_page <50:
+        while quantity_page <20:
             quantity_page = quantity_page + 1
             print("Page:" + str(quantity_page))
             try:
                 button_lire_plus = WebDriverWait(searching_browser, 10).until(
                         EC.presence_of_all_elements_located((By.CLASS_NAME, 'css-rc5s2u')))
             except NoSuchElementException:
-                print("46No such element")
+                print(GetCurrentLine() + "no such element")
                 continue
             except TimeoutException:
-                print("43 Too long to open page")
+                print(GetCurrentLine() + "too long to open page")
                 continue
             except:
-                print("4e7 Unknown error")
+                print(GetCurrentLine() + "Unknown error")
                 continue
 
             for i in range(len(button_lire_plus)):
@@ -446,7 +452,7 @@ def CarSearching(searching_browser, searching_URL):
                     #print(link)
 
                     if "https://www.olx" not in link:
-                        print("Hyevi link")
+                        print(GetCurrentLine() + "link out of the olx scope")
                         continue
 
                     searching_browser.get(link)
@@ -455,15 +461,15 @@ def CarSearching(searching_browser, searching_URL):
                     WebDriverWait(searching_browser, 30).until(
                         EC.presence_of_element_located((By.CLASS_NAME, 'css-dcwlyx')))
                 except NoSuchElementException:
-                    print("2 No such element")
+                    print(GetCurrentLine() + "no such element")
                     continue
                 except TimeoutException:
-                    print("3 Too long to open page")
+                    print(GetCurrentLine() + "too long to open page")
                     searching_browser.back()
                     time.sleep(3)
                     continue
                 except:
-                    print("4 Unknown error")
+                    print(GetCurrentLine() + "unknown error")
                     continue
 
                 page = searching_browser.page_source
@@ -496,33 +502,28 @@ def CarSearching(searching_browser, searching_URL):
 
                 try:
                     searching_browser.back()
-                    #time.sleep(1)
                 except NoSuchElementException:
-                    print("No such element")
+                    print(GetCurrentLine() + "no such element")
                     continue
                 except TimeoutException:
-                    print("frfvfd Too long to open page")
+                    print(GetCurrentLine() + "too long to open page")
                     searching_browser.back()
-                    #time.sleep(3)
                     continue
                 except:
-                    print("dfvd Unknown error")
+                    print(GetCurrentLine() + "unknown error")
                     continue
 
             try:
                 button_next = WebDriverWait(searching_browser, 30).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="pagination-forward"]')))
                 searching_browser.execute_script('arguments[0].click()', button_next)
-                #time.sleep(3)
             except NoSuchElementException:
-                print("No such element")
+                print(GetCurrentLine() + "no such element")
             except TimeoutException:
-                print("Too long to open page")
+                print(GetCurrentLine() + "too long to open page")
                 searching_browser.back()
-                #time.sleep(3)
-
             except:
-                print("Unknown error")
+                print(GetCurrentLine() + "unknown error")
         time.sleep(3)
 
 
@@ -541,21 +542,21 @@ def TestingCertainCar(searching_browser, searching_URL):
         currentCar.FillInfoByBeautifulSoup(soup, searching_URL)
         currentCar.ShowFullInfo()
     except NoSuchElementException:
-        print("No such element")
+        print(GetCurrentLine() + "no such element")
     except TimeoutException:
-        print("Too long to open page")
+        print(GetCurrentLine() + "too long to open page")
 
 
 
 def BrowserInitializing():
     option = Options()
     option.add_argument("--disable-infobars")
+    option.add_argument("--headless")
     return webdriver.Chrome(options=option)
 
 def SearchingForInvalidLinksInDatabse(searching_browser):
     global all_links_from_database
     while True:
-        print("new iteration")
         links_list = all_links_from_database
         for link in links_list:
             try:
@@ -563,21 +564,18 @@ def SearchingForInvalidLinksInDatabse(searching_browser):
                 WebDriverWait(searching_browser, 10).until(
                 EC.presence_of_element_located((By.CLASS_NAME, 'css-dcwlyx')))
             except NoSuchElementException:
-                print("2 No such element")
+                print(GetCurrentLine() + "no such element")
                 continue
             except TimeoutException:
-                print("3 Too long to open page")
+                print(GetCurrentLine() + "too long to open page")
                 invalid_links.append(link[0])
                 print("FIND NEW INVALID LINK "+ link[0])
                 print(invalid_links)
                 searching_browser.back()
                 continue
             except:
-                print("4 Unknown error")
+                print(GetCurrentLine() + "unknown error")
                 continue
-
-
-
 
 browser = BrowserInitializing()
 browserForInvalidLinks = BrowserInitializing()
@@ -586,19 +584,9 @@ t1 = threading.Thread(target=SearchingForInvalidLinksInDatabse, args=(browserFor
 t1.start()
 
 CarSearching(browser, URL)
-
-
-# wait until thread 1 is completely executed
 t1.join()
 
-
-# both threads completely executed
 print("Done!")
 
-#CarSearching(browser, URL)
-#SearchingForInvalidLinksInDatabse(browserForInvalidLinks)
 #TestingCertainCar(browser, URL)
-
-
-exit(0)
 
