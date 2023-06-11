@@ -84,7 +84,8 @@ import os.path
 #test_database.ShowDataInTable(test_database.table_name)
 
 
-URL = "https://www.olx.ua/d/transport/legkovye-avtomobili/"
+#URL = "https://www.olx.ua/d/transport/legkovye-avtomobili/"
+URL = "https://www.olx.ua/d/transport/legkovye-avtomobili/pavlograd/?currency=USD"
 #URL = "https://www.olx.ua/d/uk/obyavlenie/great-wall-voleex-c30-IDO5vuR.html"
 #URL = "https://www.olx.ua/d/uk/obyavlenie/prodam-volvo-v50-2-0-IDRhsbP.html"
 #https://www.olx.ua/d/uk/obyavlenie/prodam-ford-fiesta-2007-rk-mozhliva-rozstrochka-kredit-IDS2mdv.html
@@ -473,14 +474,14 @@ def CarSearching(searching_browser, searching_URL):
 
             try:
                 searching_browser.back()
-                time.sleep(1)
+                #time.sleep(1)
             except NoSuchElementException:
                 print("No such element")
                 continue
             except TimeoutException:
                 print("frfvfd Too long to open page")
                 searching_browser.back()
-                time.sleep(3)
+                #time.sleep(3)
                 continue
             except:
                 print("dfvd Unknown error")
@@ -490,13 +491,13 @@ def CarSearching(searching_browser, searching_URL):
             button_next = WebDriverWait(searching_browser, 30).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="pagination-forward"]')))
             searching_browser.execute_script('arguments[0].click()', button_next)
-            time.sleep(3)
+            #time.sleep(3)
         except NoSuchElementException:
             print("No such element")
         except TimeoutException:
             print("Too long to open page")
             searching_browser.back()
-            time.sleep(3)
+            #time.sleep(3)
 
         except:
             print("Unknown error")

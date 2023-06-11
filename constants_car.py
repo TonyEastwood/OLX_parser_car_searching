@@ -8,8 +8,8 @@ DB_TABLE_NAME = "cars_table"
 
 #CSV_HEADER = ["дата створення","посилання","ціна","бренд","модель","рік випуску","об'єм двигуна","вид палива","пробіг","колір","коробка передач","тип приводу",
 #              "кузов","пригнано з","кількість місць","кількість дверей","розмитнена","технічний стан"]
-CSV_HEADER_DATABASE = ["data_creation","link","price","brand","model","year_release","engine_capacity","fuel_type","mileage","color","transmission","drive_type",
-              "body","from_country","quantity_places","quantity_doors","rozmutnena","tech_state","region","city"]
+CSV_HEADER_DATABASE = ["data_creation INTEGER","link TEXT UNIQUE","price INTEGER","brand TEXT","model TEXT","year_release INTEGER","engine_capacity FLOAT","fuel_type TEXT","mileage INTEGER","color TEXT","transmission TEXT","drive_type TEXT",
+              "body TEXT","from_country TEXT","quantity_places INTEGER","quantity_doors INTEGER","rozmutnena TEXT","tech_state TEXT","region TEXT","city TEXT"]
 
 CSV_HEADER_DATABASETE = ["data_creation","link","price","brand",10,"year_release","engine_capacity","fuel_type","mileage","color","transmission","drive_type",
               "body","from_country","quantity_places","quantity_doors","rozmutnena","tech_state","region"]
@@ -171,8 +171,9 @@ TAG_BRAND = [{"bmw":{"bmw","беха","бээмвэшка","бэха","буме�
             {"chery":{"chery","cheri","чері","чери"}},
             {"gazel":{"gazel","газель"}},
             {"lexus":{"lexus","лексус"}},
-            {"ваз": {"vaz", "ваз", "2112", "21013", "2114", "lada", "лада", "копейка", "копейку","2110","заз","таврия","таврія","москвич","уаз","уазик","2172"}},
+            {"ваз": {"vaz", "ваз", "2112", "21013", "2114", "lada", "лада", "копейка", "копейку","2110","таврия","таврія","москвич","уаз","уазик","2172"}},
             {"ssangyong":{"ssangyong","сангйонг"}},
+            {"заз":{"заз"}},
             {"mitsubishi":{"mitsubishi","митсубиси","мітсубісі"}},
             {"gaz":{"gaz","газ","волга","volga"}},
             {"dodge":{"dodge","додж"}},

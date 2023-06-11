@@ -31,7 +31,7 @@ class Cars_Database():
         car_ads_string = ', '.join(car_ads_list)
 
         self.cursor.execute(""
-                    "INSERT INTO "+ table_name+ " VALUES"+
+                    "INSERT or REPLACE INTO "+ table_name+ " VALUES"+
                             car_ads_string+""
                 "")
 
