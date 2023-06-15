@@ -26,6 +26,12 @@ TAG_DOOR = "Кількість дверей: " #количество двере�
 TAG_IS_RASTAMOZHENA = "Розмитнена: "  # растоможена ли
 TAG_STATE = "Технічний стан: "
 
+class TYPE_OPERATION_RESULT(enum.Enum):
+    NO_SUCH_ELEMENT_EXCEPTION = 0
+    TIMEOUT_EXCEPTION = 1
+    UNKNOWN_EXCEPTION = 2
+    SUCCEED = 3
+
 class TRANSMISSION_TYPE(enum.Enum):
     MECHANIC = 0
     AUTOMATIC = 1
@@ -203,6 +209,7 @@ TAG_BRAND = [{"bmw":{"bmw","беха","бээмвэшка","бэха","буме�
             {"brilliance":{"brilliance"}},
             {"dadi":{"dadi"}},
             {"infiniti":{"infiniti"}},
-            {"gmc":{"gmc"}}
+            {"gmc":{"gmc"}},
+            {"інші":{"інші"}}
 
              ]                #маркамашины

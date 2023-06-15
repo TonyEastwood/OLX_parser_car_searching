@@ -57,11 +57,18 @@ class Cars_Database():
         rows = self.cursor.fetchall()
         return rows
 
+    def IsRawWithDataExist(self, table_name, column_name, data):
+        res = self.cursor.execute("SELECT EXISTS(SELECT * FROM " + table_name + " WHERE "+column_name + "=\'"+data+"\')")
+        rows = self.cursor.fetchall()
+        return rows[0][0]
+        #return rows
+
     def Close(self):
         self.database.close()
 
 
 #test_database = Cars_Database(CC.DB_NAME, CC.DB_TABLE_NAME)
+#test_database.IsRawWithDataExist(CC.DB_TABLE_NAME,"link","https://www.olx.ua/d/uk/obyavlenie/shevrole-kaptva-2008-r-2-0-dizel-IDSb5cI.html")
 #test_database.SelectListOfDatasByColumn(CC.DB_TABLE_NAME,"link")
 # link_list = []
 #

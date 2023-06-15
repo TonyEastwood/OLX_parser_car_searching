@@ -17,7 +17,7 @@ import csv
 import os.path
 import threading
 import inspect
-
+import pickle
 
 # cars_list = []
 # with open('cars.csv', encoding='UTF8', newline='') as csvfile:
@@ -87,15 +87,49 @@ import inspect
 
 
 #URL = "https://www.olx.ua/d/transport/legkovye-avtomobili/"
-URL = "https://www.olx.ua/d/uk/transport/legkovye-avtomobili/dnp/?currency=USD&search%5Bfilter_enum_car_body%5D%5B0%5D=coupe&search%5Bfilter_enum_transmission_type%5D%5B0%5D=545"
+URL = "https://www.olx.ua/d/uk/transport/legkovye-avtomobili/"
+#URL = "https://www.olx.ua/d/uk/transport/legkovye-avtomobili/"
 #URL = "https://www.olx.ua/d/uk/obyavlenie/great-wall-voleex-c30-IDO5vuR.html"
 #URL = "https://www.olx.ua/d/uk/obyavlenie/prodam-volvo-v50-2-0-IDRhsbP.html"
 #https://www.olx.ua/d/uk/obyavlenie/prodam-ford-fiesta-2007-rk-mozhliva-rozstrochka-kredit-IDS2mdv.html
 cars_list = []
 invalid_links = []
 all_links_from_database = []
+
 cars_database = SQ.Cars_Database(CC.DB_NAME, CC.DB_TABLE_NAME)
 
+
+def GetAllPageElements(browser, searching_type, searching_value, waiting_time):
+    try:
+        elements = WebDriverWait(browser, waiting_time).until(
+            EC.presence_of_all_elements_located((searching_type, searching_value)))
+    except NoSuchElementException:
+        print(GetCurrentLine() + "no such element")
+        return ([],CC.TYPE_OPERATION_RESULT.NO_SUCH_ELEMENT_EXCEPTION)
+    except TimeoutException:
+        print(GetCurrentLine() + "too long to open page")
+        return ([], CC.TYPE_OPERATION_RESULT.TIMEOUT_EXCEPTION)
+    except:
+        print(GetCurrentLine() + "Unknown error")
+        return ([], CC.TYPE_OPERATION_RESULT.UNKNOWN_EXCEPTION)
+
+    return (elements, CC.TYPE_OPERATION_RESULT.SUCCEED)
+
+def GetPageElement(browser, searching_type, searching_value, waiting_time):
+    try:
+        element = WebDriverWait(browser, waiting_time).until(
+            EC.presence_of_element_located((searching_type, searching_value)))
+    except NoSuchElementException:
+        print(GetCurrentLine() + "no such element")
+        return (None,CC.TYPE_OPERATION_RESULT.NO_SUCH_ELEMENT_EXCEPTION)
+    except TimeoutException:
+        print(GetCurrentLine() + "too long to open page")
+        return (None, CC.TYPE_OPERATION_RESULT.TIMEOUT_EXCEPTION)
+    except:
+        print(GetCurrentLine() + "Unknown error")
+        return (None, CC.TYPE_OPERATION_RESULT.UNKNOWN_EXCEPTION)
+
+    return (element, CC.TYPE_OPERATION_RESULT.SUCCEED)
 
 def GetCurrentLine():
     """Returns the current line number in our program."""
@@ -107,21 +141,21 @@ def UpdateLinksFromDatabase():
     all_links_from_database.clear()
     all_links_from_database = cars_database.SelectListOfDatasByColumn(CC.DB_TABLE_NAME,"link")
 
-def WriteCarsToCSVFile():
-    global cars_list
-    is_file_exist =  os.path.exists('cars.csv')
-
-
-    with open('cars.csv', 'a', encoding='UTF8', newline='') as f:
-        writer = csv.writer(f)
-
-        if not is_file_exist:
-            writer.writerow(CC.CSV_HEADER)
-
-        for car in cars_list:
-            writer.writerow([car.creation_date, car.link, car.price, car.brand, car.model, car.release_year, car.engine_capacity, CC.FUEL[car.type_of_fuel],
-                             car.mileage, car.color, CC.TRANSMISSION[car.transmission], CC.DRIVE[car.type_of_drive], CC.BODY[car.body_type],
-                             car.came_from, car.seats, car.door, car.is_rastamozhena, car.state])
+#def WriteCarsToCSVFile():
+    # global cars_list
+    # is_file_exist =  os.path.exists('cars.csv')
+    #
+    #
+    # with open('cars.csv', 'a', encoding='UTF8', newline='') as f:
+    #     writer = csv.writer(f)
+    #
+    #     if not is_file_exist:
+    #         writer.writerow(CC.CSV_HEADER)
+    #
+    #     for car in cars_list:
+    #         writer.writerow([car.creation_date, car.link, car.price, car.brand, car.model, car.release_year, car.engine_capacity, CC.FUEL[car.type_of_fuel],
+    #                          car.mileage, car.color, CC.TRANSMISSION[car.transmission], CC.DRIVE[car.type_of_drive], CC.BODY[car.body_type],
+    #                          car.came_from, car.seats, car.door, car.is_rastamozhena, car.state])
 
 def GetMonthNumFromString(month):
     if month == "січня":
@@ -202,13 +236,14 @@ class Car_Structure():
         if price is not None:
             price = price.text.replace(' ', '')
             if "$" in price:
-                price = int(price.replace('$', ''))
+                price = int(float(price.replace('$', '')))
             elif "грн." in price:
                 price = price.replace("грн.", '')
-                price = int(int(price) / CC.EXCHANGE_RATE_HRYVNA_DOLLAR)
+                price = int(float(int(price) / CC.EXCHANGE_RATE_HRYVNA_DOLLAR))
             elif "€" in price:
-                price = int(price.replace('€', ''))
-                price = int(int(price) * CC.EXCHANGE_RATE_EURO_DOLLAR)
+                price = int(float(price.replace('€', '')))
+                price = int(float(int(price) * CC.EXCHANGE_RATE_EURO_DOLLAR)
+                            )
             else:
                 price = 0
         else:
@@ -262,7 +297,7 @@ class Car_Structure():
                 split_date = creation_date.split()
                 creation_date = int(split_date[2] + GetMonthNumFromString(split_date[1]) + split_date[0])
         else:
-            print(GetCurrentLine() + "Createion date can't be None!")
+            print(GetCurrentLine() + "Creation date can't be None!")
             return 0
         return creation_date
 
@@ -300,21 +335,15 @@ class Car_Structure():
 
             elif CC.TAG_ENGINE_CAPACITY.lower() in tag.lower():
                 self.engine_capacity = self.NormilizingEngineCapacity(tag.lower().replace(CC.TAG_ENGINE_CAPACITY.lower(),""))
-                #self.engine_capacity = tag.lower().replace(CC.TAG_ENGINE_CAPACITY.lower(),"")
             elif CC.TAG_IS_RASTAMOZHENA.lower() in tag.lower():
                 self.is_rastamozhena = self.NormilizingRozmutn(tag.lower().replace(CC.TAG_IS_RASTAMOZHENA.lower(),""))
-                #self.is_rastamozhena = tag.lower().replace(CC.TAG_IS_RASTAMOZHENA.lower(),"")
             elif CC.TAG_MILEAGE.lower() in tag.lower():
                 self.mileage = self.NormilizingMileage(tag.lower().replace(CC.TAG_MILEAGE.lower(),""))
-                #self.mileage = tag.lower().replace(CC.TAG_MILEAGE.lower(),"")
             elif CC.TAG_MODEl.lower() in tag.lower():
                 self.model = tag.lower().replace(CC.TAG_MODEl.lower(),"")
             elif CC.TAG_RELEASE_YEAR.lower() in tag.lower():
                 self.release_year = self.NormilizingYearRelease(tag.lower().replace(CC.TAG_RELEASE_YEAR.lower(),""))
-                #self.release_year = tag.text.lower().replace(CC.TAG_RELEASE_YEAR.lower(),"")
             elif CC.TAG_TRANSMISSION.lower() in tag.lower():
-                #self.transmission = tag.text.lower().replace(CC.TAG_TRANSMISSION.lower(),"")
-
                 transmission = tag.lower().replace(CC.TAG_TRANSMISSION.lower(),"")
                 for i in CC.TRANSMISSION:
                     if CC.TRANSMISSION[i].lower() in transmission.lower():
@@ -322,7 +351,6 @@ class Car_Structure():
                         break
             elif CC.TAG_TYPE_OF_DRIVE.lower() in tag.lower():
                 self.type_of_drive = tag.lower().replace(CC.TAG_TYPE_OF_DRIVE.lower(),"")
-
                 type_of_drive = tag.lower().replace(CC.TAG_TYPE_OF_DRIVE.lower(),"")
 
                 for i in CC.DRIVE:
@@ -331,7 +359,6 @@ class Car_Structure():
                         break
 
             elif CC.TAG_TYPE_OF_FUEL.lower() in tag.lower():
-                #self.type_of_fuel = tag.text.lower().replace(CC.TAG_TYPE_OF_FUEL.lower(),"")
                 type_of_fuel = tag.lower().replace(CC.TAG_TYPE_OF_FUEL.lower(),"")
                 for i in CC.FUEL:
                     if CC.FUEL[i].lower() in type_of_fuel.lower():
@@ -418,7 +445,8 @@ class Car_Structure():
 
 def CarSearching(searching_browser, searching_URL):
     global cars_list
-
+    current_ad = 0
+    quantity_existent_links = 0
     while True:
         UpdateLinksFromDatabase()
 
@@ -427,49 +455,47 @@ def CarSearching(searching_browser, searching_URL):
         soup = BeautifulSoup(page, "html.parser")
 
         quantity_page = 0
-        current_ad = 0
+
         while quantity_page <20:
             quantity_page = quantity_page + 1
             print("Page:" + str(quantity_page))
-            try:
-                button_lire_plus = WebDriverWait(searching_browser, 10).until(
-                        EC.presence_of_all_elements_located((By.CLASS_NAME, 'css-rc5s2u')))
-            except NoSuchElementException:
-                print(GetCurrentLine() + "no such element")
-                continue
-            except TimeoutException:
-                print(GetCurrentLine() + "too long to open page")
-                continue
-            except:
-                print(GetCurrentLine() + "Unknown error")
+
+            elements_list, result = GetAllPageElements(searching_browser, By.CLASS_NAME, 'css-rc5s2u',30)
+
+            if result == False:
+                print(GetCurrentLine() + "result = False")
                 continue
 
-            for i in range(len(button_lire_plus)):
-                try:
-                    button_lire_plus = WebDriverWait(searching_browser, 10).until(
-                        EC.presence_of_all_elements_located((By.CLASS_NAME, 'css-rc5s2u')))
-                    link = button_lire_plus[i].get_attribute('href')
-                    #print(link)
+            for i in range(len(elements_list)):
+                elements_list, result = GetAllPageElements(searching_browser, By.CLASS_NAME, 'css-rc5s2u',30)
 
-                    if "https://www.olx" not in link:
-                        print(GetCurrentLine() + "link out of the olx scope")
-                        continue
-
-                    searching_browser.get(link)
-                    #searching_browser.execute_script("arguments[0].click()", button_lire_plus[i])
-
-                    WebDriverWait(searching_browser, 30).until(
-                        EC.presence_of_element_located((By.CLASS_NAME, 'css-dcwlyx')))
-                except NoSuchElementException:
-                    print(GetCurrentLine() + "no such element")
+                if result == False:
+                    print(GetCurrentLine() + "result = False")
                     continue
-                except TimeoutException:
-                    print(GetCurrentLine() + "too long to open page")
+
+                link = elements_list[i].get_attribute('href')
+
+
+                if "https://www.olx" not in link:
+                    print(GetCurrentLine() + "link out of the olx scope")
+                    continue
+
+                current_ad = current_ad + 1
+                print(current_ad)
+
+                if cars_database.IsRawWithDataExist(CC.DB_TABLE_NAME, "link", link) == 1:
+                    quantity_existent_links = quantity_existent_links + 1
+                    print("Bad links percentage:" + str(float(quantity_existent_links / current_ad * 100)))
+                    continue
+
+                searching_browser.get(link)
+
+                element, result = GetPageElement(searching_browser, By.CLASS_NAME, 'css-dcwlyx', 30 )
+                if result == CC.TYPE_OPERATION_RESULT.TIMEOUT_EXCEPTION:
+                    print(GetCurrentLine() + " timeout exception")
                     searching_browser.back()
                     time.sleep(3)
-                    continue
-                except:
-                    print(GetCurrentLine() + "unknown error")
+                elif result != CC.TYPE_OPERATION_RESULT.SUCCEED:
                     continue
 
                 page = searching_browser.page_source
@@ -477,14 +503,8 @@ def CarSearching(searching_browser, searching_URL):
                 currentCar = Car_Structure()
 
 
-                current_ad = current_ad + 1
-                print(current_ad)
-
                 currentCar.FillInfoByBeautifulSoup(soup, link)
-                #currentCar.ShowFullInfo()
                 cars_list.append(currentCar.ConvertToDatabaseRaw())
-
-                #cars_list.sort(key=lambda x: x.creation_date, reverse=True)
 
                 if current_ad%10 ==0:
                     cars_database.Insert(CC.DB_TABLE_NAME, cars_list)
@@ -494,36 +514,35 @@ def CarSearching(searching_browser, searching_URL):
                         print(invalid_links)
                         cars_database.RemoveLinks(CC.DB_TABLE_NAME, invalid_links)
                         invalid_links.clear()
-                    #WriteCarsToCSVFile()
+
                     cars_list.clear()
 
                 if current_ad % 1000 == 0:
                     UpdateLinksFromDatabase()
 
-                try:
-                    searching_browser.back()
-                except NoSuchElementException:
-                    print(GetCurrentLine() + "no such element")
-                    continue
-                except TimeoutException:
-                    print(GetCurrentLine() + "too long to open page")
-                    searching_browser.back()
-                    continue
-                except:
-                    print(GetCurrentLine() + "unknown error")
-                    continue
-
-            try:
-                button_next = WebDriverWait(searching_browser, 30).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="pagination-forward"]')))
-                searching_browser.execute_script('arguments[0].click()', button_next)
-            except NoSuchElementException:
-                print(GetCurrentLine() + "no such element")
-            except TimeoutException:
-                print(GetCurrentLine() + "too long to open page")
+                #try:
                 searching_browser.back()
-            except:
-                print(GetCurrentLine() + "unknown error")
+                #except NoSuchElementException:
+                 #   print(GetCurrentLine() + "no such element")
+                #    continue
+                #except TimeoutException:
+                 #   print(GetCurrentLine() + "too long to open page")
+                  #  searching_browser.back()
+                  #  continue
+                #except:
+                 #   print(GetCurrentLine() + "unknown error")
+                  #  continue
+            element, result = GetPageElement(searching_browser,By.CSS_SELECTOR, '[data-testid="pagination-forward"]', 30)
+
+            if result == CC.TYPE_OPERATION_RESULT.TIMEOUT_EXCEPTION:
+                print(GetCurrentLine() + " timeout exception")
+                searching_browser.back()
+                time.sleep(2)
+
+                searching_browser.execute_script('arguments[0].click()', element)
+                #button_next = WebDriverWait(searching_browser, 30).until(
+                #    EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="pagination-forward"]')))
+
         time.sleep(3)
 
 
@@ -553,6 +572,21 @@ def BrowserInitializing():
     option.add_argument("--disable-infobars")
     option.add_argument("--headless")
     return webdriver.Chrome(options=option)
+
+def save_cookie(driver):
+    with open("cookie", 'wb') as filehandler:
+        pickle.dump(driver.get_cookies(), filehandler)
+def load_cookie(driver):
+     driver.get(URL)
+     with open("cookie", 'rb') as cookiesfile:
+         cookies = pickle.load(cookiesfile)
+         for cookie in cookies:
+             #print(cookie)
+             try:
+                driver.add_cookie(cookie)
+             except:
+                print("cookie error")
+
 
 def SearchingForInvalidLinksInDatabse(searching_browser):
     global all_links_from_database
