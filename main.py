@@ -310,7 +310,17 @@ class Car_Structure():
     def FillInfoByBeautifulSoup(self, soup, link):
 
         self.link = link
-        self.creation_date = self.NormilizingCreationDate(soup.find('span', class_='css-19yf5ek').text)
+
+        try:
+            temp_date = soup.find('span', class_='css-19yf5ek')
+            if temp_date != None:
+                self.creation_date = self.NormilizingCreationDate(temp_date.text)
+            else:
+                print(GetCurrentLine() + " error")
+                print(self.link)
+        except:
+            print(GetCurrentLine()+" error")
+            print(self.link)
 
 
         self.price = self.NormilizingPrice(soup.find('h3', class_='css-ddweki er34gjf0'))

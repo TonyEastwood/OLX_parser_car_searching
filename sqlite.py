@@ -41,8 +41,6 @@ class Cars_Database():
         for i in range(len(links_list)):
             links_list[i] = 'link = \'' + links_list[i] + '\''
         sql_request = ' OR '.join(links_list)
-        print(sql_request)
-
         self.cursor.execute(""
                         "DELETE from "+table_name+" where " +sql_request +
                         "")
